@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='utf-8'?>
+<widget id="com.barokcoder.geminilite" version="1.0.0" xmlns="http://www.cordova.io/ns/1.0">
+    <name>Gemini Lite</name>
+    <description>Ultra-lightweight Gemini client for Android.</description>
+    <author email="dev@example.com">Barok Coder</author>
+    <content src="index.html" />
+    <access origin="*" />
+    <allow-intent href="http://*/*" />
+    <allow-intent href="https://*/*" />
+</widget>
