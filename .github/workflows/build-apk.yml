@@ -21,7 +21,7 @@ jobs:
     - name: Set up Java JDK
       uses: actions/setup-java@v4
       with:
-        distribution: 'zulu'
+        distribution: 'temurin'
         java-version: '17'
 
     - name: Install Cordova
@@ -34,9 +34,9 @@ jobs:
         cp config.xml build_app/config.xml
         cd build_app
         cordova platform add android
-        cordova build android --no-telemetry
+        cordova build android --debug --no-telemetry
 
-    - name: Upload APK Artifact
+    - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: gemini-lite-apk
