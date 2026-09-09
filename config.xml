@@ -1,10 +1,11 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget id="com.barokcoder.gemini" version="1.0.0" xmlns="http://www.cordova.io/ns/1.0">
-    <name>gemini</name>
-    <description>Lightweight Gemini client</description>
+<widget id="com.barokcoder.monster" version="1.0.0" xmlns="http://www.cordova.io/ns/1.0">
+    <name>Monster</name>
+    <description>Monster Client</description>
     <author email="dev@example.com">Barok Coder</author>
     <content src="index.html" />
     <access origin="*" />
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />
+    <icon src="icon.png" />
 </widget>
