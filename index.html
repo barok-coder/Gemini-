@@ -21,10 +21,11 @@
     .user { background: #282a2c; color: #e3e3e3; align-self: flex-end; border-bottom-right-radius: 4px; }
     .bot { background: transparent; color: #e3e3e3; align-self: flex-start; padding-left: 0; padding-right: 0; width: 100%; }
     
-    /* Markdown & Generated Image Support */
+    /* Markdown & Image Link Styling */
     .bot p { margin-bottom: 8px; }
-    .bot img { max-width: 100%; border-radius: 12px; margin: 10px 0; border: 1px solid #333; }
-    .bot ul, .bot ol { margin-left: 20px; margin-bottom: 8px; }
+    .bot img { max-width: 100%; border-radius: 12px; margin: 10px 0; border: 1px solid #333; display: block; }
+    .img-link-container { margin: 8px 0; padding: 8px 12px; background: #171717; border: 1px solid #8a2be2; border-radius: 8px; display: inline-block; }
+    .img-link-container a { color: #b388ff; text-decoration: none; font-weight: bold; font-size: 13px; word-break: break-all; }
     .bot code { background: #222; padding: 2px 5px; border-radius: 4px; font-family: monospace; font-size: 13px; color: #b388ff; }
     .bot pre { background: #171717; padding: 10px; border-radius: 8px; overflow-x: auto; margin: 8px 0; border: 1px solid #2e2f31; }
 
@@ -55,7 +56,7 @@
   </header>
 
   <div id="chat-box">
-    <div class="msg system">Monster initialized. Holds up to 10 recent messages.</div>
+    <div class="msg system">Monster initialized. Stacked history database active (Limit: 10).</div>
   </div>
 
   <div id="preview-bar">
@@ -78,7 +79,22 @@
     const fileNameSpan = document.getElementById('file-name');
     
     let currentAttachment = null;
-    let conversationHistory = []; // Maintained up to 10 entries
+    let db = null;
+
+    // --- IndexedDB Database Initialization ---
+    const request = indexedDB.open("MonsterChatDB", 1);
+    
+    request.onupgradeneeded = (e) => {
+      db = e.target.result;
+      if (!db.objectStoreNames.contains("historyStack")) {
+        db.createObjectStore("historyStack", { keyPath: "id", autoIncrement: true });
+      }
+    };
+
+    request.onsuccess = (e) => {
+      db = e.target.result;
+      loadHistoryFromDB();
+    };
 
     window.onload = () => {
       document.getElementById('gemini-key').value = localStorage.getItem('gemini_key') || '';
@@ -89,7 +105,51 @@
     function saveKeys() {
       localStorage.setItem('gemini_key', document.getElementById('gemini-key').value.trim());
       localStorage.setItem('openai_key', document.getElementById('openai-key').value.trim());
-      localStorage.setItem('claude-key', document.getElementById('claude-key').value.trim());
+      localStorage.setItem('claude_key', document.getElementById('claude-key').value.trim());
+    }
+
+    // --- Stack Database Operations ---
+    async function saveMessageToDB(role, parts) {
+      if (!db) return;
+      const tx = db.transaction("historyStack", "readwrite");
+      const store = tx.objectStore("historyStack");
+      
+      store.add({ role, parts, timestamp: Date.now() });
+      
+      // Enforce stacked limit of 10 messages
+      const countReq = store.count();
+      countReq.onsuccess = () => {
+        if (countReq.result > 10) {
+          const deleteTx = db.transaction("historyStack", "readwrite");
+          const deleteStore = deleteTx.objectStore("historyStack");
+          deleteStore.openCursor().onsuccess = (event) => {
+            const cursor = event.target.result;
+            if (cursor) {
+              deleteStore.delete(cursor.key); // Delete oldest entry
+            }
+          };
+        }
+      };
+    }
+
+    function getHistoryFromDB() {
+      return new Promise((resolve) => {
+        if (!db) return resolve([]);
+        const tx = db.transaction("historyStack", "readonly");
+        const store = tx.objectStore("historyStack");
+        const getAllReq = store.getAll();
+        getAllReq.onsuccess = () => resolve(getAllReq.result || []);
+      });
+    }
+
+    async function loadHistoryFromDB() {
+      const history = await getHistoryFromDB();
+      history.forEach(item => {
+        const textPart = item.parts.find(p => p.text);
+        if (textPart) {
+          appendMessage(textPart.text, item.role === 'user' ? 'user' : 'bot');
+        }
+      });
     }
 
     function handleKeyPress(e) {
@@ -141,16 +201,16 @@
       }
       if (prompt) userParts.push({ text: prompt });
 
-      conversationHistory.push({ role: "user", parts: userParts });
+      // Save user entry to database stack
+      await saveMessageToDB("user", userParts);
 
       clearAttachment();
       userInput.value = '';
       sendBtn.disabled = true;
 
-      // Keep only 10 recent items in history
-      if (conversationHistory.length > 10) {
-        conversationHistory = conversationHistory.slice(-10);
-      }
+      // Fetch history stack for payload context
+      const fullHistory = await getHistoryFromDB();
+      const payloadContents = fullHistory.map(item => ({ role: item.role, parts: item.parts }));
 
       const botMsgElement = appendMessage('...', 'bot');
 
@@ -160,7 +220,7 @@
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: conversationHistory })
+            body: JSON.stringify({ contents: payloadContents })
           }
         );
 
@@ -171,12 +231,11 @@
         } else if (data.candidates && data.candidates[0].content) {
           const botReply = data.candidates[0].content.parts[0].text;
           
-          botMsgElement.innerHTML = marked.parse(botReply);
-          conversationHistory.push({ role: "model", parts: [{ text: botReply }] });
+          // Render content and display image URLs as clickable links
+          renderBotResponse(botMsgElement, botReply);
 
-          if (conversationHistory.length > 10) {
-            conversationHistory = conversationHistory.slice(-10);
-          }
+          // Save response entry to database stack
+          await saveMessageToDB("model", [{ text: botReply }]);
         } else {
           botMsgElement.innerText = "No response generated.";
         }
@@ -188,13 +247,29 @@
       }
     }
 
+    function renderBotResponse(element, text) {
+      let parsedHtml = marked.parse(text);
+      
+      // Convert Markdown images ![alt](url) into image preview + direct link container
+      parsedHtml = parsedHtml.replace(/<img src="([^"]+)" alt="([^"]*)"[^>]*>/g, function(match, url, alt) {
+        return `
+          <img src="${url}" alt="${alt}" />
+          <div class="img-link-container">
+            🔗 <a href="${url}" target="_blank" rel="noopener">Open Generated Image</a>
+          </div>
+        `;
+      });
+
+      element.innerHTML = parsedHtml;
+    }
+
     function appendMessage(text, type) {
       const msg = document.createElement('div');
       msg.className = `msg ${type}`;
       if (type === 'user' || type === 'system') {
         msg.innerText = text;
       } else {
-        msg.innerHTML = text;
+        renderBotResponse(msg, text);
       }
       chatBox.appendChild(msg);
       chatBox.scrollTop = chatBox.scrollHeight;
@@ -202,4 +277,4 @@
     }
   </script>
 </body>
-        </html>
+  </html>
