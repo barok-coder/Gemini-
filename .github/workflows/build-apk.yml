@@ -24,20 +24,27 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
+    - name: Setup Android SDK Tools
+      uses: android-actions/setup-android@v3
+
+    - name: Accept Android Licenses
+      run: y | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+
     - name: Install Cordova
       run: npm install -g cordova
 
     - name: Create Cordova Project & Build
       run: |
-        cordova create build_app com.barokcoder.geminilite GeminiLite
+        cordova create build_app com.barokcoder.monster Monster
         cp index.html build_app/www/index.html
         cp config.xml build_app/config.xml
+        if [ -f "icon.png" ]; then cp icon.png build_app/www/icon.png; fi
         cd build_app
         cordova platform add android
         cordova build android --debug --no-telemetry
 
-    - name: Upload APK
+    - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: gemini-lite-apk
+        name: monster-apk
         path: build_app/platforms/android/app/build/outputs/apk/debug/app-debug.apk
