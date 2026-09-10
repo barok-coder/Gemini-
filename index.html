@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>AI Assistant</title>
+  <title>Gemini AI</title>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background-color: #131314; color: #e3e3e3; display: flex; height: 100vh; height: 100dvh; overflow: hidden; }
 
-    /* --- Sidebar (Gemini Style) --- */
+    /* --- Sidebar --- */
     #sidebar {
       position: fixed; top: 0; left: -280px; width: 280px; height: 100%;
       background: #1e1f20; z-index: 1000; transition: left 0.3s ease;
@@ -27,7 +27,7 @@
       display: flex; align-items: center; gap: 10px; background: #2b2c2e; color: #e3e3e3;
       border: none; padding: 10px 16px; border-radius: 20px; font-weight: 500; cursor: pointer; width: 100%; margin-bottom: 15px;
     }
-    .history-title { font-size: 12px; color: #8e918f; font-weight: 600; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .history-title { font-size: 12px; color: #8e918f; font-weight: 600; margin-bottom: 10px; text-transform: uppercase; }
     .history-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
     .history-item {
       padding: 10px 12px; border-radius: 8px; font-size: 14px; color: #c4c7c5;
@@ -35,35 +35,29 @@
     }
     .history-item:hover { background: #2d2e31; }
 
-    /* --- Main UI --- */
+    /* --- Main Layout --- */
     #app-container { flex: 1; display: flex; flex-direction: column; width: 100%; height: 100%; }
 
     header {
-      background: #131314; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;
+      background: #131314; padding: 12px 16px; display: flex; align-items: center; gap: 12px;
       border-bottom: 1px solid #1e1f20;
     }
-    .left-nav { display: flex; align-items: center; gap: 12px; }
     .icon-btn { background: none; border: none; color: #e3e3e3; font-size: 20px; cursor: pointer; }
+    .brand-title { font-size: 16px; font-weight: 600; color: #a8c7fa; }
 
-    select.model-select {
-      background: #1e1f20; color: #e3e3e3; border: 1px solid #333; padding: 6px 12px;
-      border-radius: 8px; font-size: 13px; outline: none;
-    }
-
-    /* --- API Key Drawer --- */
+    /* --- Key Setup Container --- */
     #key-drawer {
       background: #1e1f20; padding: 12px 16px; display: flex; flex-direction: column; gap: 10px;
       border-bottom: 1px solid #2d2e31; font-size: 13px;
     }
-    .key-status { display: flex; justify-content: space-between; align-items: center; color: #a8c7fa; font-size: 12px; }
     .key-input-group { display: flex; gap: 8px; }
     .key-input-group input {
       flex: 1; padding: 8px 12px; border-radius: 8px; border: 1px solid #3d3e41;
-      background: #131314; color: #fff; font-size: 12px; outline: none;
+      background: #131314; color: #fff; font-size: 13px; outline: none;
     }
-    .save-btn { background: #a8c7fa; color: #040e15; border: none; padding: 0 14px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+    .save-btn { background: #a8c7fa; color: #040e15; border: none; padding: 0 16px; border-radius: 8px; font-weight: bold; cursor: pointer; }
 
-    /* --- Chat Box --- */
+    /* --- Chat --- */
     #chat-box { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 16px; }
 
     .msg { max-width: 85%; padding: 12px 16px; border-radius: 18px; line-height: 1.5; font-size: 14px; word-break: break-word; }
@@ -74,7 +68,7 @@
     .bot code { background: #1e1f20; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 13px; color: #a8c7fa; }
     .bot pre { background: #1e1f20; padding: 12px; border-radius: 8px; overflow-x: auto; margin: 8px 0; border: 1px solid #2d2e31; }
 
-    /* --- Input Area --- */
+    /* --- Footer --- */
     #preview-bar { display: none; background: #1e1f20; padding: 8px 16px; align-items: center; gap: 10px; font-size: 12px; color: #a8c7fa; }
     #preview-bar button { background: none; border: none; color: #ff6b6b; font-weight: bold; cursor: pointer; margin-left: auto; }
 
@@ -89,10 +83,9 @@
 </head>
 <body>
 
-  <!-- Overlay -->
   <div id="overlay" onclick="toggleSidebar()"></div>
 
-  <!-- Sidebar -->
+  <!-- Sidebar History -->
   <div id="sidebar">
     <div class="sidebar-header">
       <span style="font-weight: bold; color: #a8c7fa;">Recents</span>
@@ -103,46 +96,32 @@
     <div class="history-list" id="history-list"></div>
   </div>
 
-  <!-- Main View -->
   <div id="app-container">
     <header>
-      <div class="left-nav">
-        <button class="icon-btn" onclick="toggleSidebar()">☰</button>
-        <select id="model-provider" class="model-select">
-          <option value="gemini">Gemini 2.5 Flash</option>
-          <option value="chatgpt">ChatGPT (GPT-4o-mini)</option>
-        </select>
-      </div>
-      <button class="icon-btn" onclick="toggleKeyDrawer()">🔑</button>
+      <button class="icon-btn" onclick="toggleSidebar()">☰</button>
+      <div class="brand-title">Gemini 2.5 Flash</div>
     </header>
 
-    <!-- Key Drawer -->
+    <!-- Key Container (Hidden automatically once saved) -->
     <div id="key-drawer">
-      <div class="key-status">
-        <span id="key-status-text">Configure API Keys</span>
-      </div>
       <div class="key-input-group">
-        <input type="password" id="gemini-key" placeholder="Gemini API Key" />
-        <input type="password" id="openai-key" placeholder="OpenAI API Key" />
-        <button class="save-btn" onclick="saveKeys()">Save</button>
+        <input type="password" id="gemini-key" placeholder="Enter Gemini API Key..." />
+        <button class="save-btn" onclick="saveKey()">Save</button>
       </div>
     </div>
 
-    <!-- Chat Messages -->
     <div id="chat-box"></div>
 
-    <!-- File Attachment Preview -->
     <div id="preview-bar">
       <span id="file-name">File attached</span>
       <button onclick="clearAttachment()">Remove</button>
     </div>
 
-    <!-- Input Footer -->
     <footer>
       <div class="input-wrapper">
         <label class="attach-btn" for="file-input">+</label>
         <input type="file" id="file-input" style="display: none;" accept="image/*,application/pdf,text/*" onchange="handleFileSelect(event)" />
-        <textarea id="user-input" placeholder="Ask anything..." rows="1" onkeydown="handleKeyPress(event)"></textarea>
+        <textarea id="user-input" placeholder="Message Gemini..." rows="1" onkeydown="handleKeyPress(event)"></textarea>
       </div>
       <button class="send-btn" id="send-btn" onclick="sendMessage()">➤</button>
     </footer>
@@ -160,8 +139,8 @@
     let currentAttachment = null;
     let db = null;
 
-    // --- IndexedDB Setup ---
-    const request = indexedDB.open("AIChatDB", 2);
+    // --- IndexedDB Database Setup ---
+    const request = indexedDB.open("GeminiChatDB", 1);
     request.onupgradeneeded = (e) => {
       db = e.target.result;
       if (!db.objectStoreNames.contains("messages")) {
@@ -175,11 +154,10 @@
 
     window.onload = () => {
       const gKey = localStorage.getItem('gemini_key') || '';
-      const oKey = localStorage.getItem('openai_key') || '';
       document.getElementById('gemini-key').value = gKey;
-      document.getElementById('openai-key').value = oKey;
-
-      if (gKey || oKey) {
+      
+      // Auto-remove setup container if key already exists
+      if (gKey) {
         keyDrawer.style.display = 'none';
       }
     };
@@ -189,23 +167,24 @@
       document.getElementById('overlay').classList.toggle('active');
     }
 
-    function toggleKeyDrawer() {
-      keyDrawer.style.display = keyDrawer.style.display === 'none' ? 'flex' : 'none';
+    function saveKey() {
+      const val = document.getElementById('gemini-key').value.trim();
+      if (!val) {
+        alert("Please enter a valid Gemini API Key.");
+        return;
+      }
+      localStorage.setItem('gemini_key', val);
+      keyDrawer.style.display = 'none'; // Auto hide once saved
     }
 
-    function saveKeys() {
-      const gKey = document.getElementById('gemini-key').value.trim();
-      const oKey = document.getElementById('openai-key').value.trim();
-      localStorage.setItem('gemini_key', gKey);
-      localStorage.setItem('openai_key', oKey);
-      keyDrawer.style.display = 'none';
+    function getApiKey() {
+      return localStorage.getItem('gemini_key') || document.getElementById('gemini-key').value.trim();
     }
 
     async function saveMessageToDB(role, text) {
       if (!db) return;
       const tx = db.transaction("messages", "readwrite");
-      const store = tx.objectStore("messages");
-      store.add({ role, text, timestamp: Date.now() });
+      tx.objectStore("messages").add({ role, text, timestamp: Date.now() });
       updateSidebarHistory();
     }
 
@@ -213,8 +192,7 @@
       if (!db) return;
       chatBox.innerHTML = '';
       const tx = db.transaction("messages", "readonly");
-      const store = tx.objectStore("messages");
-      const req = store.getAll();
+      const req = tx.objectStore("messages").getAll();
       req.onsuccess = () => {
         const msgs = req.result || [];
         msgs.forEach(m => appendMessage(m.text, m.role));
@@ -225,8 +203,7 @@
     async function updateSidebarHistory() {
       if (!db) return;
       const tx = db.transaction("messages", "readonly");
-      const store = tx.objectStore("messages");
-      const req = store.getAll();
+      const req = tx.objectStore("messages").getAll();
       req.onsuccess = () => {
         const msgs = req.result || [];
         const userMsgs = msgs.filter(m => m.role === 'user').slice(-10).reverse();
@@ -278,20 +255,13 @@
 
     async function sendMessage() {
       const prompt = userInput.value.trim();
-      const provider = document.getElementById('model-provider').value;
-      const geminiKey = localStorage.getItem('gemini_key');
-      const openaiKey = localStorage.getItem('openai_key');
+      const apiKey = getApiKey();
 
       if (!prompt && !currentAttachment) return;
 
-      if (provider === 'gemini' && !geminiKey) {
-        alert("Please set your Gemini API key.");
-        toggleKeyDrawer();
-        return;
-      }
-      if (provider === 'chatgpt' && !openaiKey) {
-        alert("Please set your OpenAI API key.");
-        toggleKeyDrawer();
+      if (!apiKey) {
+        keyDrawer.style.display = 'flex';
+        alert("Please set your Gemini API key first.");
         return;
       }
 
@@ -305,49 +275,30 @@
       const botMsgElement = appendMessage('...', 'bot');
 
       try {
-        let replyText = "";
-        if (provider === 'gemini') {
-          replyText = await callGeminiAPI(prompt, geminiKey);
-        } else {
-          replyText = await callChatGPTAPI(prompt, openaiKey);
+        let parts = [];
+        if (currentAttachment) {
+          parts.push({ inlineData: { mimeType: currentAttachment.mimeType, data: currentAttachment.data } });
         }
-        
-        botMsgElement.innerHTML = marked.parse(replyText);
-        await saveMessageToDB("bot", replyText);
+        if (prompt) parts.push({ text: prompt });
+
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts }] })
+        });
+
+        const data = await res.json();
+        if (data.error) throw new Error(data.error.message);
+
+        const botReply = data.candidates[0].content.parts[0].text;
+        botMsgElement.innerHTML = marked.parse(botReply);
+        await saveMessageToDB("bot", botReply);
       } catch (err) {
         botMsgElement.innerText = "Error: " + err.message;
       } finally {
         sendBtn.disabled = false;
         chatBox.scrollTop = chatBox.scrollHeight;
       }
-    }
-
-    async function callGeminiAPI(prompt, key) {
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-      });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error.message);
-      return data.candidates[0].content.parts[0].text;
-    }
-
-    async function callChatGPTAPI(prompt, key) {
-      const res = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${key}`
-        },
-        body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [{ role: 'user', content: prompt }]
-        })
-      });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error.message);
-      return data.choices[0].message.content;
     }
 
     function appendMessage(text, type) {
