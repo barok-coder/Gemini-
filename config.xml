@@ -1,9 +1,10 @@
 <?xml version='1.0' encoding='utf-8'?>
 <widget id="com.barokcoder.geminichat" version="1.0.0" xmlns="http://www.cordova.io/ns/1.0">
-    <name>GeminiChat</name>
+    <name>Gemini</name>
     <description>Gemini AI Client</description>
     <author email="dev@example.com">Barok Coder</author>
     <content src="index.html" />
+    <icon src="www/icon.png" />
     <access origin="*" />
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />
