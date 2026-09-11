@@ -4,7 +4,6 @@
     <description>Gemini AI Client</description>
     <author email="dev@example.com">Barok Coder</author>
     <content src="index.html" />
-    <icon src="www/icon.png" />
     <access origin="*" />
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />
