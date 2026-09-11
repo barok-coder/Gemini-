@@ -14,7 +14,7 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Set up Java JDK
-      uses: actions/setup-java@v5
+      uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
         java-version: '17'
@@ -22,7 +22,10 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '20'
+        node-version: '22'
+
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
 
     - name: Install Cordova
       run: npm install -g cordova
@@ -32,9 +35,6 @@ jobs:
         cordova create app com.barokcoder.geminichat GeminiChat
         cp index.html app/www/index.html
         cp config.xml app/config.xml
-        
-        # Create a simple valid base icon placeholder if missing
-        mkdir -p app/www/res
         
         cd app
         cordova platform add android@12.0.0
