@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Gemini AI</title>
+  <title>Gemini</title>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background-color: #131314; color: #e3e3e3; display: flex; height: 100vh; height: 100dvh; overflow: hidden; }
 
-    /* --- Sidebar --- */
+    /* --- Drawer Sidebar --- */
     #sidebar {
       position: fixed; top: 0; left: -280px; width: 280px; height: 100%;
-      background: #1e1f20; z-index: 1000; transition: left 0.3s ease;
+      background: #1e1f20; z-index: 1000; transition: left 0.25s ease-in-out;
       display: flex; flex-direction: column; padding: 16px; border-right: 1px solid #2d2e31;
     }
     #sidebar.open { left: 0; }
@@ -24,31 +24,34 @@
 
     .sidebar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
     .new-chat-btn {
-      display: flex; align-items: center; gap: 10px; background: #2b2c2e; color: #e3e3e3;
-      border: none; padding: 10px 16px; border-radius: 20px; font-weight: 500; cursor: pointer; width: 100%; margin-bottom: 15px;
+      display: flex; align-items: center; justify-content: flex-start; gap: 10px; background: #131314; color: #e3e3e3;
+      border: 1px solid #3c4043; padding: 12px 16px; border-radius: 28px; font-size: 14px; font-weight: 500; cursor: pointer; width: 100%; margin-bottom: 20px;
     }
-    .history-title { font-size: 12px; color: #8e918f; font-weight: 600; margin-bottom: 10px; text-transform: uppercase; }
-    .history-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; }
+    .history-title { font-size: 12px; color: #8e918f; font-weight: 600; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .history-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
     .history-item {
-      padding: 10px 12px; border-radius: 8px; font-size: 14px; color: #c4c7c5;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 12px; border-radius: 20px; font-size: 14px; color: #c4c7c5; cursor: pointer;
     }
-    .history-item:hover { background: #2d2e31; }
+    .history-item:hover, .history-item.active { background: #2d2e31; color: #fff; }
+    .history-item .title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+    .history-item .del-btn { background: none; border: none; color: #8e918f; font-size: 14px; cursor: pointer; margin-left: 8px; }
 
-    /* --- Main Layout --- */
+    /* --- App Container --- */
     #app-container { flex: 1; display: flex; flex-direction: column; width: 100%; height: 100%; }
 
     header {
-      background: #131314; padding: 12px 16px; display: flex; align-items: center; gap: 12px;
+      background: #131314; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;
       border-bottom: 1px solid #1e1f20;
     }
-    .icon-btn { background: none; border: none; color: #e3e3e3; font-size: 20px; cursor: pointer; }
-    .brand-title { font-size: 16px; font-weight: 600; color: #a8c7fa; }
+    .left-header { display: flex; align-items: center; gap: 12px; }
+    .icon-btn { background: none; border: none; color: #e3e3e3; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .brand-title { font-size: 18px; font-weight: 600; background: linear-gradient(90deg, #4285f4, #9b51e0, #e91e63); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
-    /* --- Key Setup Container --- */
+    /* --- Key Input Container --- */
     #key-drawer {
       background: #1e1f20; padding: 12px 16px; display: flex; flex-direction: column; gap: 10px;
-      border-bottom: 1px solid #2d2e31; font-size: 13px;
+      border-bottom: 1px solid #2d2e31;
     }
     .key-input-group { display: flex; gap: 8px; }
     .key-input-group input {
@@ -57,10 +60,10 @@
     }
     .save-btn { background: #a8c7fa; color: #040e15; border: none; padding: 0 16px; border-radius: 8px; font-weight: bold; cursor: pointer; }
 
-    /* --- Chat --- */
+    /* --- Chat Frame --- */
     #chat-box { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 16px; }
 
-    .msg { max-width: 85%; padding: 12px 16px; border-radius: 18px; line-height: 1.5; font-size: 14px; word-break: break-word; }
+    .msg { max-width: 88%; padding: 12px 16px; border-radius: 18px; line-height: 1.5; font-size: 14px; word-break: break-word; }
     .user { background: #2b2c2e; color: #e3e3e3; align-self: flex-end; border-bottom-right-radius: 4px; }
     .bot { background: transparent; color: #e3e3e3; align-self: flex-start; width: 100%; max-width: 100%; padding-left: 0; }
     
@@ -68,7 +71,7 @@
     .bot code { background: #1e1f20; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 13px; color: #a8c7fa; }
     .bot pre { background: #1e1f20; padding: 12px; border-radius: 8px; overflow-x: auto; margin: 8px 0; border: 1px solid #2d2e31; }
 
-    /* --- Footer --- */
+    /* --- Input Area --- */
     #preview-bar { display: none; background: #1e1f20; padding: 8px 16px; align-items: center; gap: 10px; font-size: 12px; color: #a8c7fa; }
     #preview-bar button { background: none; border: none; color: #ff6b6b; font-weight: bold; cursor: pointer; margin-left: auto; }
 
@@ -85,24 +88,26 @@
 
   <div id="overlay" onclick="toggleSidebar()"></div>
 
-  <!-- Sidebar History -->
+  <!-- Sidebar Drawer -->
   <div id="sidebar">
     <div class="sidebar-header">
-      <span style="font-weight: bold; color: #a8c7fa;">Recents</span>
+      <span style="font-weight: bold; color: #a8c7fa; font-size: 16px;">Chats</span>
       <button class="icon-btn" onclick="toggleSidebar()">✕</button>
     </div>
-    <button class="new-chat-btn" onclick="clearCurrentChat()">+ New Chat</button>
-    <div class="history-title">Recent Prompts</div>
+    <button class="new-chat-btn" onclick="createNewChatSession()">+ New chat</button>
+    <div class="history-title">Recent</div>
     <div class="history-list" id="history-list"></div>
   </div>
 
   <div id="app-container">
     <header>
-      <button class="icon-btn" onclick="toggleSidebar()">☰</button>
-      <div class="brand-title">Gemini 2.5 Flash</div>
+      <div class="left-header">
+        <button class="icon-btn" onclick="toggleSidebar()">☰</button>
+        <div class="brand-title">Gemini</div>
+      </div>
     </header>
 
-    <!-- Key Container (Hidden automatically once saved) -->
+    <!-- Key Container -->
     <div id="key-drawer">
       <div class="key-input-group">
         <input type="password" id="gemini-key" placeholder="Enter Gemini API Key..." />
@@ -138,26 +143,25 @@
     
     let currentAttachment = null;
     let db = null;
+    let activeSessionId = null;
 
-    // --- IndexedDB Database Setup ---
-    const request = indexedDB.open("GeminiChatDB", 1);
+    // --- IndexedDB Configuration ---
+    const request = indexedDB.open("GeminiAppDB", 3);
     request.onupgradeneeded = (e) => {
       db = e.target.result;
-      if (!db.objectStoreNames.contains("messages")) {
-        db.createObjectStore("messages", { keyPath: "id", autoIncrement: true });
+      if (!db.objectStoreNames.contains("sessions")) {
+        db.createObjectStore("sessions", { keyPath: "id" });
       }
     };
     request.onsuccess = (e) => {
       db = e.target.result;
-      loadChatHistory();
+      initAppSessions();
     };
 
     window.onload = () => {
       const gKey = localStorage.getItem('gemini_key') || '';
-      document.getElementById('gemini-key').value = gKey;
-      
-      // Auto-remove setup container if key already exists
       if (gKey) {
+        document.getElementById('gemini-key').value = gKey;
         keyDrawer.style.display = 'none';
       }
     };
@@ -169,61 +173,122 @@
 
     function saveKey() {
       const val = document.getElementById('gemini-key').value.trim();
-      if (!val) {
-        alert("Please enter a valid Gemini API Key.");
-        return;
-      }
+      if (!val) return alert("Enter a valid key");
       localStorage.setItem('gemini_key', val);
-      keyDrawer.style.display = 'none'; // Auto hide once saved
+      keyDrawer.style.display = 'none';
     }
 
     function getApiKey() {
       return localStorage.getItem('gemini_key') || document.getElementById('gemini-key').value.trim();
     }
 
-    async function saveMessageToDB(role, text) {
-      if (!db) return;
-      const tx = db.transaction("messages", "readwrite");
-      tx.objectStore("messages").add({ role, text, timestamp: Date.now() });
-      updateSidebarHistory();
+    // --- Session & History Logic ---
+    async function initAppSessions() {
+      const sessions = await getAllSessions();
+      if (sessions.length === 0) {
+        await createNewChatSession();
+      } else {
+        switchSession(sessions[0].id);
+      }
+      renderSidebarSessions();
     }
 
-    async function loadChatHistory() {
-      if (!db) return;
+    async function createNewChatSession() {
+      const newId = "session_" + Date.now();
+      const newSession = { id: newId, title: "New Chat", messages: [], timestamp: Date.now() };
+      
+      const tx = db.transaction("sessions", "readwrite");
+      await tx.objectStore("sessions").put(newSession);
+      
+      activeSessionId = newId;
       chatBox.innerHTML = '';
-      const tx = db.transaction("messages", "readonly");
-      const req = tx.objectStore("messages").getAll();
-      req.onsuccess = () => {
-        const msgs = req.result || [];
-        msgs.forEach(m => appendMessage(m.text, m.role));
-        updateSidebarHistory();
-      };
+      await renderSidebarSessions();
+      if (document.getElementById('sidebar').classList.contains('open')) {
+        toggleSidebar();
+      }
     }
 
-    async function updateSidebarHistory() {
-      if (!db) return;
-      const tx = db.transaction("messages", "readonly");
-      const req = tx.objectStore("messages").getAll();
-      req.onsuccess = () => {
-        const msgs = req.result || [];
-        const userMsgs = msgs.filter(m => m.role === 'user').slice(-10).reverse();
-        historyList.innerHTML = '';
-        userMsgs.forEach(m => {
-          const item = document.createElement('div');
-          item.className = 'history-item';
-          item.innerText = m.text;
-          historyList.appendChild(item);
-        });
-      };
+    function getAllSessions() {
+      return new Promise((resolve) => {
+        const tx = db.transaction("sessions", "readonly");
+        const req = tx.objectStore("sessions").getAll();
+        req.onsuccess = () => {
+          const list = req.result || [];
+          list.sort((a,b) => b.timestamp - a.timestamp);
+          resolve(list);
+        };
+      });
     }
 
-    function clearCurrentChat() {
-      if (!db) return;
-      const tx = db.transaction("messages", "readwrite");
-      tx.objectStore("messages").clear();
+    async function switchSession(id) {
+      activeSessionId = id;
       chatBox.innerHTML = '';
-      updateSidebarHistory();
-      toggleSidebar();
+      const tx = db.transaction("sessions", "readonly");
+      const req = tx.objectStore("sessions").get(id);
+      req.onsuccess = () => {
+        const session = req.result;
+        if (session && session.messages) {
+          session.messages.forEach(m => appendMessage(m.text, m.role));
+        }
+      };
+      renderSidebarSessions();
+    }
+
+    async function deleteSession(e, id) {
+      e.stopPropagation();
+      const tx = db.transaction("sessions", "readwrite");
+      await tx.objectStore("sessions").delete(id);
+      const remaining = await getAllSessions();
+      if (remaining.length === 0) {
+        await createNewChatSession();
+      } else if (activeSessionId === id) {
+        switchSession(remaining[0].id);
+      } else {
+        renderSidebarSessions();
+      }
+    }
+
+    async function renderSidebarSessions() {
+      const sessions = await getAllSessions();
+      historyList.innerHTML = '';
+      sessions.forEach(s => {
+        const item = document.createElement('div');
+        item.className = `history-item ${s.id === activeSessionId ? 'active' : ''}`;
+        item.onclick = () => { switchSession(s.id); toggleSidebar(); };
+
+        const titleSpan = document.createElement('span');
+        titleSpan.className = 'title';
+        titleSpan.innerText = s.title;
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'del-btn';
+        delBtn.innerText = '✕';
+        delBtn.onclick = (e) => deleteSession(e, s.id);
+
+        item.appendChild(titleSpan);
+        item.appendChild(delBtn);
+        historyList.appendChild(item);
+      });
+    }
+
+    async function appendMessageToSession(role, text) {
+      if (!activeSessionId) return;
+      const tx = db.transaction("sessions", "readwrite");
+      const store = tx.objectStore("sessions");
+      const req = store.get(activeSessionId);
+      
+      req.onsuccess = () => {
+        const session = req.result;
+        if (!session) return;
+        
+        session.messages.push({ role, text, timestamp: Date.now() });
+        if (session.messages.length === 1 && role === 'user') {
+          session.title = text.slice(0, 30) + (text.length > 30 ? '...' : '');
+        }
+        session.timestamp = Date.now();
+        store.put(session);
+        renderSidebarSessions();
+      };
     }
 
     function handleKeyPress(e) {
@@ -261,12 +326,12 @@
 
       if (!apiKey) {
         keyDrawer.style.display = 'flex';
-        alert("Please set your Gemini API key first.");
+        alert("Please set your Gemini API key.");
         return;
       }
 
       appendMessage(prompt, 'user');
-      await saveMessageToDB("user", prompt);
+      await appendMessageToSession("user", prompt);
 
       userInput.value = '';
       clearAttachment();
@@ -292,7 +357,7 @@
 
         const botReply = data.candidates[0].content.parts[0].text;
         botMsgElement.innerHTML = marked.parse(botReply);
-        await saveMessageToDB("bot", botReply);
+        await appendMessageToSession("bot", botReply);
       } catch (err) {
         botMsgElement.innerText = "Error: " + err.message;
       } finally {
