@@ -389,10 +389,9 @@
         
         const data = await res.json().catch(() => ({}));
         
-        // Retry on 503 Service Unavailable or 429 Too Many Requests/Overload
         if ((res.status === 503 || res.status === 429) && attempt < maxRetries - 1) {
           await new Promise(r => setTimeout(r, delay));
-          delay *= 2; // 2s -> 4s -> 8s
+          delay *= 2;
           continue;
         }
         
@@ -412,7 +411,6 @@
         return;
       }
 
-      // Hide intro screen on first prompt
       const introScreen = document.getElementById('intro-screen');
       if (introScreen) introScreen.remove();
 
@@ -439,7 +437,7 @@
         if (prompt) parts.push({ text: prompt });
 
         const data = await fetchWithRetry(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
