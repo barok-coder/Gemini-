@@ -25,9 +25,9 @@ jobs:
         node-version: '20'
 
     - name: Install Cordova
-      run: npm install -g cordova
+      run: npm install -g cordova@12.0.0
 
-    - name: Accept Android SDK Licenses & Install Components
+    - name: Accept Android SDK Licenses & Install Tools
       run: |
         yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
         $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "build-tools;33.0.2" "platforms;android-33"
@@ -36,15 +36,26 @@ jobs:
       env:
         JAVA_HOME: ${{ env.JAVA_HOME }}
         CORDOVA_JAVA_HOME: ${{ env.JAVA_HOME }}
+        GRADLE_OPTS: "-Dorg.gradle.daemon=false"
       run: |
+        rm -rf app
         cordova create app com.barokcoder.geminichat GeminiChat
         
-        if [ -f "config.xml" ]; then
-          cp config.xml app/config.xml
-        fi
-        
+        cat << 'EOF' > app/config.xml
+        <?xml version='1.0' encoding='utf-8'?>
+        <widget id="com.barokcoder.geminichat" version="1.0.0" xmlns="http://www.cordova.io/ns/1.0">
+            <name>Gemini</name>
+            <description>Gemini Web Client</description>
+            <author email="dev@example.com">Barok Coder</author>
+            <content src="index.html" />
+            <access origin="*" />
+            <allow-intent href="http://*/*" />
+            <allow-intent href="https://*/*" />
+        </widget>
+        EOF
+
         cp index.html app/www/index.html
-        
+
         cd app
         cordova platform add android@12.0.0 --save
         cordova build android --debug --no-telemetry
@@ -54,4 +65,3 @@ jobs:
       with:
         name: GeminiChat-APK
         path: app/platforms/android/app/build/outputs/apk/debug/app-debug.apk
-        
